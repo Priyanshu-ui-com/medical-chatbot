@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI Medical Chatbot – Working Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f6f5;--sf:#fff;--tx:#14282b;--mu:#5b7276;--ln:#d5e1df;--ac:#0e7c7b;--ac2:#e6f3f2;--wn:#b4322b;--wnb:#fdeceb;--ub:#0e7c7b;--ut:#fff;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1c1e;--sf:#172a2d;--tx:#e6f0ef;--mu:#93aaad;--ln:#2a4145;--ac:#4cc3bf;--ac2:#18383a;--wn:#ff9a92;--wnb:#3a1f1e;--ub:#1c6f6d;--ut:#fff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1c1e;--sf:#172a2d;--tx:#e6f0ef;--mu:#93aaad;--ln:#2a4145;--ac:#4cc3bf;--ac2:#18383a;--wn:#ff9a92;--wnb:#3a1f1e;--ub:#1c6f6d;--ut:#fff;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 "DM Sans",system-ui,sans-serif}
+h1,h2,h3{font-family:Newsreader,Georgia,serif;margin:0;font-weight:600}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px}
+header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);border-bottom:1px solid var(--ln);z-index:5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+.bar{display:flex;align-items:center;gap:10px;padding:10px 0;flex-wrap:wrap}
+.brand{font-family:Newsreader,Georgia,serif;font-size:21px;font-weight:600;flex:1}
+.brand span{color:var(--ac)}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--ln);background:var(--sf);color:var(--tx);padding:8px 14px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+button.p{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:700}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) button.p{color:#06292a}}
+:root[data-theme="dark"] button.p{color:#06292a}
+nav{display:flex;gap:6px}
+nav button.on{background:var(--ac2);border-color:var(--ac);color:var(--ac);font-weight:700}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:18px;margin:18px 0}
+label{display:block;font-size:14px;color:var(--mu);margin:12px 0 4px}
+input,textarea{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--ln);background:var(--bg);color:var(--tx)}
+.hint{font-size:14px;color:var(--mu)}
+.err{color:var(--wn);font-size:14px;min-height:20px;margin-top:8px}
+.disc{background:var(--ac2);border-radius:10px;padding:10px 12px;font-size:14px;margin:14px 0}
+#msgs{display:flex;flex-direction:column;gap:12px;padding:16px 0 130px}
+.m{max-width:88%;padding:11px 14px;border-radius:14px;overflow-wrap:anywhere}
+.u{align-self:flex-end;background:var(--ub);color:var(--ut);border-bottom-right-radius:4px}
+.b{align-self:flex-start;background:var(--sf);border:1px solid var(--ln);border-bottom-left-radius:4px}
+.b.w{background:var(--wnb);border-color:var(--wn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{background:var(--ac2);color:var(--ac);border-radius:99px;padding:2px 10px;font-size:13px;font-weight:500}
+.cond{border-top:1px solid var(--ln);padding-top:10px;margin-top:10px}
+.cond h3{font-size:18px;display:flex;justify-content:space-between;gap:8px}
+.cond ul{margin:4px 0 6px;padding-left:20px}
+.pct{font-family:"DM Sans",sans-serif;font-size:13px;color:var(--ac);font-weight:700;white-space:nowrap}
+.meter{height:5px;border-radius:3px;background:var(--ln);margin:4px 0 8px}
+.meter i{display:block;height:100%;border-radius:3px;background:var(--ac)}
+.dr{font-size:14px;color:var(--mu)}
+#comp{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--ln);padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px))}
+#comp .row{display:flex;gap:8px}
+#comp input{flex:1}
+.qs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px}
+.qs button{white-space:nowrap;font-size:14px;padding:6px 12px;border-radius:99px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--ac2);border-radius:10px;padding:10px;text-align:center}
+.stat b{display:block;font:600 26px Newsreader,Georgia,serif;color:var(--ac)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--ln)}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="bar">
+<div class="brand">Medi<span>Chat</span></div>
+<nav id="nav" class="hide"><button data-v="chat" class="on">Chat</button><button data-v="admin" id="adm" class="hide">Admin</button></nav>
+<button id="out" class="hide">Log out</button>
+</div></div></header>
+
+<main class="wrap">
+<section id="auth" class="card">
+<h2>Sign in to start</h2>
+<p class="hint">Create an account, or use the demo admin account (admin / admin123) to manage the disease database.</p>
+<label for="un">Username</label><input id="un" autocomplete="username">
+<label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
+<div class="err" id="aerr"></div>
+<div style="display:flex;gap:8px;margin-top:6px"><button class="p" id="login">Log in</button><button id="reg">Create account</button></div>
+<div class="disc">Educational health information only. This is not a diagnosis and does not replace a doctor.</div>
+</section>
+
+<section id="chat" class="hide">
+<div class="disc">Describe how you feel, for example “fever, headache and body pain since two days”. You will get possible matches, precautions and when to see a doctor.</div>
+<div id="msgs" aria-live="polite"></div>
+</section>
+
+<section id="admin" class="hide">
+<div class="card"><h2>Usage report</h2><div class="stats" id="stats" style="margin-top:12px"></div>
+<h3 style="font-size:17px;margin:16px 0 6px">Most suggested conditions</h3><div class="tbl" id="top"></div></div>
+<div class="card"><h2>Add or update a disease</h2>
+<label for="dn">Disease name</label><input id="dn">
+<label for="ds">Symptoms (comma separated)</label><input id="ds" placeholder="fever, cough, fatigue">
+<label for="dd">Description</label><textarea id="dd" rows="2"></textarea>
+<label for="dp">Precautions (comma separated)</label><input id="dp">
+<div class="err" id="derr"></div>
+<button class="p" id="dadd">Save disease</button>
+<p class="hint" id="dcount"></p></div>
+</section>
+</main>
+
+<div id="comp" class="hide"><div class="wrap">
+<div class="qs" id="qs"></div>
+<div class="row"><input id="q" placeholder="Type your symptoms or a health question" autocomplete="off" aria-label="Message"><button class="p" id="send">Send</button></div>
+</div></div>
+
+<script>
+/* ---------- Data layer (the "database") ---------- */
+const SYM={fever:["fever","temperature","feverish","chills"],cough:["cough","coughing"],"sore throat":["sore throat","throat pain","throat"],"runny nose":["runny nose","running nose","sneez","stuffy","blocked nose","congestion"],headache:["headache","head ache","head pain"],"body pain":["body pain","body ache","muscle pain","aching","joint pain"],fatigue:["tired","fatigue","weakness","weak","exhausted"],nausea:["nausea","nauseous","vomit"],diarrhea:["diarrhea","diarrhoea","loose motion","loose stool"],"stomach pain":["stomach pain","stomach ache","abdominal","belly pain","cramp"],rash:["rash","skin red","red spots"],"eye pain":["eye pain","behind the eyes","behind my eyes"],"itchy eyes":["itchy eyes","watery eyes","itchy"],wheezing:["wheez","tight chest","whistling"],"breathlessness":["breathless","short of breath","difficulty breathing"],"burning urination":["burning urination","burning while","painful urination","pee burns"],"frequent urination":["frequent urination","urinate often","pee often"],thirst:["thirst","very thirsty"],"light sensitivity":["light sensitivity","sensitive to light","sensitive to sound"],dizziness:["dizzy","dizziness","lightheaded"],pallor:["pale","pallor"],"loss of appetite":["no appetite","loss of appetite","not hungry"],sweating:["sweating","night sweats"]};
+const DB0=[
+{n:"Common cold",s:["runny nose","sore throat","cough","fatigue","fever"],d:"A mild viral infection of the nose and throat that usually clears in about a week.",p:["Rest and sleep well","Drink warm fluids","Gargle with warm salt water","Wash hands often"],f:"Warm soups, ginger tea, vitamin C rich fruits.",w:"Symptoms last more than 10 days or you have trouble breathing."},
+{n:"Influenza (flu)",s:["fever","body pain","cough","fatigue","headache","chills","sore throat"],d:"A viral infection that hits suddenly with fever, aches and tiredness.",p:["Rest and stay home","Drink plenty of fluids","Cover coughs and sneezes","Ask about the yearly flu vaccine"],f:"Light, warm food and lots of water.",w:"High fever lasts beyond 3 days, or you have breathlessness."},
+{n:"Dengue",s:["fever","headache","eye pain","body pain","rash","nausea","fatigue"],d:"A mosquito-borne viral fever. Joint pain and pain behind the eyes are typical.",p:["Prevent mosquito bites","Avoid aspirin and ibuprofen unless a doctor says so","Rest and hydrate","Remove standing water around home"],f:"Fluids, ORS, coconut water, papaya leaf only as advised by a doctor.",w:"See a doctor early for any fever with rash or severe body pain. Get tested."},
+{n:"Malaria",s:["fever","chills","sweating","headache","nausea","body pain"],d:"A mosquito-borne parasite infection with cycles of chills, fever and sweating.",p:["Use mosquito nets and repellent","Avoid stagnant water nearby","Do not self-medicate"],f:"Easily digestible food and plenty of fluids.",w:"Get a blood test promptly if fever comes in cycles."},
+{n:"Typhoid",s:["fever","stomach pain","loss of appetite","fatigue","headache","diarrhea"],d:"A bacterial infection spread by contaminated food or water, with long-lasting fever.",p:["Drink boiled or filtered water","Wash hands before eating","Avoid street food during outbreaks"],f:"Soft, home-cooked food. Avoid spicy and oily meals.",w:"Fever lasts more than 3 days. A blood test is needed."},
+{n:"Gastroenteritis (stomach flu)",s:["nausea","diarrhea","stomach pain","fever","fatigue"],d:"Inflammation of the stomach and gut, usually from a virus or contaminated food.",p:["Sip ORS or clean water often","Rest the stomach with small meals","Wash hands well"],f:"Banana, rice, toast, curd. Avoid dairy-heavy and oily food.",w:"Blood in stool, signs of dehydration, or symptoms beyond 2 days."},
+{n:"Migraine",s:["headache","nausea","light sensitivity","dizziness"],d:"Recurring, often one-sided throbbing headaches that can come with nausea and light sensitivity.",p:["Rest in a dark, quiet room","Keep a regular sleep schedule","Note your triggers","Limit screen time"],f:"Regular meals, enough water, limit caffeine.",w:"Sudden worst-ever headache, or headaches with weakness or vision loss."},
+{n:"Allergic rhinitis",s:["runny nose","itchy eyes","cough","headache"],d:"An allergic reaction to dust, pollen or pets that causes sneezing and itchy eyes.",p:["Avoid known triggers","Keep bedding clean","Wear a mask in dusty places"],f:"No special diet. Stay hydrated.",w:"Symptoms keep returning or disturb sleep."},
+{n:"Urinary tract infection",s:["burning urination","frequent urination","stomach pain","fever"],d:"A bacterial infection of the urinary system that causes burning and frequent urination.",p:["Drink plenty of water","Do not hold urine","Maintain hygiene"],f:"Water, cranberry juice, avoid excess caffeine.",w:"Needs a urine test. See a doctor, especially with fever or back pain."},
+{n:"Asthma",s:["wheezing","breathlessness","cough"],d:"A long-term condition where airways narrow, causing wheezing and breathlessness.",p:["Avoid dust, smoke and cold air","Keep prescribed inhaler with you","Follow your asthma plan"],f:"Balanced diet, stay hydrated.",w:"See a doctor for diagnosis. Seek urgent care if breathing is hard."},
+{n:"Diabetes (warning signs)",s:["thirst","frequent urination","fatigue","loss of appetite"],d:"High blood sugar can show up as thirst, frequent urination and tiredness.",p:["Get a fasting blood sugar test","Stay active","Limit sugary drinks"],f:"More vegetables and whole grains, less sugar and refined flour.",w:"Get tested soon. These signs need a blood test to confirm."},
+{n:"Anaemia",s:["fatigue","pallor","dizziness","breathlessness","headache"],d:"Low haemoglobin, often from low iron, causing tiredness and pale skin.",p:["Get a blood count test","Eat iron-rich food","Take supplements only as advised"],f:"Spinach, lentils, jaggery, dates, with vitamin C to help absorption.",w:"Needs a blood test to find the cause."}
+];
+let S={users:{},hist:{},db:DB0,sym:SYM,stats:{msgs:0,sug:{}},me:null};
+const mem={};
+function load(){try{const r=localStorage.getItem("mc1");if(r){const o=JSON.parse(r);S=Object.assign(S,o);S.me=null}}catch(e){Object.assign(S,mem.s||{})}}
+function save(){try{localStorage.setItem("mc1",JSON.stringify(S))}catch(e){mem.s=S}}
+load();
+const $=id=>document.getElementById(id);
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- Auth ---------- */
+async function hash(s){try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}catch(e){return btoa(s)}}
+async function auth(create){
+  const u=$("un").value.trim().toLowerCase(),p=$("pw").value;
+  if(!u||p.length<4){$("aerr").textContent="Enter a username and a password of at least 4 characters.";return}
+  const h=await hash(p);
+  if(u==="admin"&&!S.users.admin)S.users.admin={h:await hash("admin123"),role:"admin"};
+  if(create){if(S.users[u]){$("aerr").textContent="That username is taken. Choose another.";return}S.users[u]={h,role:"user"}}
+  else if(!S.users[u]||S.users[u].h!==h){$("aerr").textContent="Wrong username or password.";return}
+  S.me=u;S.hist[u]=S.hist[u]||[];save();$("aerr").textContent="";$("pw").value="";enter();
+}
+$("login").onclick=()=>auth(false);$("reg").onclick=()=>auth(true);
+$("pw").onkeydown=e=>{if(e.key==="Enter")auth(false)};
+$("out").onclick=()=>{S.me=null;["chat","admin","nav","out","comp"].forEach(i=>$(i).classList.add("hide"));$("auth").classList.remove("hide");$("un").value=""};
+function enter(){
+  $("auth").classList.add("hide");$("nav").classList.remove("hide");$("out").classList.remove("hide");$("comp").classList.remove("hide");
+  $("adm").classList.toggle("hide",S.users[S.me].role!=="admin");
+  $("msgs").innerHTML="";const h=S.hist[S.me];
+  if(h.length)h.forEach(x=>add(x.r,x.t,true));else add("b","Hello "+esc(S.me)+". Tell me your symptoms or ask about a disease, diet, exercise, sleep or hydration.",true);
+  view("chat");
+  $("qs").innerHTML=["I have fever and headache","cough and sore throat","what is dengue","diet tips","burning urination"].map(t=>`<button>${t}</button>`).join("");
+  $("qs").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("q").value=b.textContent;send()});
+}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>view(b.dataset.v));
+function view(v){["chat","admin"].forEach(i=>$(i).classList.toggle("hide",i!==v));$("comp").classList.toggle("hide",v!=="chat");
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));if(v==="admin")report();else window.scrollTo(0,document.body.scrollHeight)}
+
+/* ---------- NLP + ML engine ---------- */
+const URGENT=/chest pain|can.?t breathe|cannot breathe|unconscious|severe bleeding|seizure|stroke|suicid|overdose|poison/;
+function idf(){const N=S.db.length,df={};S.db.forEach(d=>d.s.forEach(k=>df[k]=(df[k]||0)+1));return k=>Math.log((N+1)/((df[k]||0)+1))+1}
+function extract(t){return Object.keys(S.sym).filter(k=>S.sym[k].some(w=>t.includes(w)))}
+function rank(found){
+  const w=idf();const u=Math.sqrt(found.reduce((a,k)=>a+w(k)**2,0))||1;
+  return S.db.map(d=>{const dn=Math.sqrt(d.s.reduce((a,k)=>a+w(k)**2,0))||1;
+    const dot=found.filter(k=>d.s.includes(k)).reduce((a,k)=>a+w(k)**2,0);
+    return{d,score:dot/(u*dn),hit:found.filter(k=>d.s.includes(k))}}).filter(r=>r.score>0).sort((a,b)=>b.score-a.score).slice(0,3);
+}
+function reply(raw){
+  const t=raw.toLowerCase();
+  if(URGENT.test(t))return{w:1,h:"<b>This may be an emergency.</b> Call your local emergency number or go to the nearest hospital now. Do not wait for a chatbot answer."};
+  if(/^(hi|hello|hey|namaste)\b/.test(t))return{h:"Hello. Tell me your symptoms, for example “cough and sore throat”."};
+  const named=S.db.find(d=>t.includes(d.n.toLowerCase().split(" (")[0]));
+  if(named&&/what is|tell me|about|explain|info/.test(t))return{h:card(named)};
+  if(/diet|food|eat|nutrition/.test(t))return{h:"<b>Diet tips</b><ul><li>Fill half your plate with vegetables and fruit.</li><li>Choose whole grains and pulses.</li><li>Cut down on sugary drinks and fried food.</li></ul>"};
+  if(/exercise|workout|walk|fitness/.test(t))return{h:"<b>Exercise tips</b><ul><li>Aim for 30 minutes of brisk walking most days.</li><li>Add stretching and light strength work twice a week.</li><li>Start slowly if you are returning after illness.</li></ul>"};
+  if(/sleep|insomnia/.test(t))return{h:"<b>Sleep tips</b><ul><li>Sleep and wake at the same time daily.</li><li>Keep screens away for an hour before bed.</li><li>Keep the room dark and cool.</li></ul>"};
+  if(/water|hydrat/.test(t))return{h:"<b>Hydration tips</b><ul><li>Most adults do well with 2 to 3 litres of fluids a day.</li><li>Drink more in heat or when sick.</li><li>Pale yellow urine is a good sign.</li></ul>"};
+  if(/health tip|healthy habit|tips/.test(t))return{h:"Ask me about diet, exercise, sleep or hydration, or describe your symptoms."};
+  const found=extract(t);
+  if(!found.length)return{h:"I could not find a symptom in that. Try describing it plainly, such as “fever, headache and tiredness”."};
+  const r=rank(found);
+  if(!r.length)return{h:"I found "+chips(found)+" but no matching condition in my database. Please consult a doctor."};
+  S.stats.sug[r[0].d.n]=(S.stats.sug[r[0].d.n]||0)+1;
+  const max=r[0].score;
+  return{h:"<div class='dr'>Symptoms I understood</div>"+chips(found)+r.map(x=>card(x.d,Math.round(x.score*100),x.hit)).join("")+"<div class='dr' style='margin-top:10px'>Match shows how closely your symptoms fit, not a diagnosis. See a doctor for a proper check.</div>"};
+}
+const chips=a=>"<div class='chips'>"+a.map(k=>`<span class='chip'>${esc(k)}</span>`).join("")+"</div>";
+function card(d,p,hit){return`<div class='cond'><h3><span>${esc(d.n)}</span>${p!=null?`<span class='pct'>${p}% match</span>`:""}</h3>${p!=null?`<div class='meter'><i style='width:${p}%'></i></div>`:""}<div>${esc(d.d)}</div><b>Precautions</b><ul>${d.p.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>${d.f?`<div><b>Diet:</b> ${esc(d.f)}</div>`:""}${d.w?`<div class='dr'><b>See a doctor:</b> ${esc(d.w)}</div>`:""}</div>`}
+
+/* ---------- Chat UI ---------- */
+function add(r,t,silent){const m=document.createElement("div");m.className="m "+(r==="u"?"u":"b");m.innerHTML=t;$("msgs").appendChild(m);if(!silent)window.scrollTo({top:document.body.scrollHeight})}
+function send(){
+  const q=$("q").value.trim();if(!q)return;$("q").value="";
+  const safe=esc(q);add("u",safe);S.hist[S.me].push({r:"u",t:safe});S.stats.msgs++;
+  const r=reply(q);
+  const m=document.createElement("div");m.className="m b"+(r.w?" w":"");m.innerHTML=r.h;$("msgs").appendChild(m);
+  S.hist[S.me].push({r:"b",t:r.h});if(S.hist[S.me].length>60)S.hist[S.me]=S.hist[S.me].slice(-60);save();
+  window.scrollTo({top:document.body.scrollHeight});
+}
+$("send").onclick=send;$("q").onkeydown=e=>{if(e.key==="Enter")send()};
+
+/* ---------- Admin ---------- */
+function report(){
+  const users=Object.keys(S.users).filter(u=>S.users[u].role!=="admin").length;
+  $("stats").innerHTML=`<div class="stat"><b>${users}</b>users</div><div class="stat"><b>${S.stats.msgs}</b>messages</div><div class="stat"><b>${S.db.length}</b>diseases</div>`;
+  const rows=Object.entries(S.stats.sug).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  $("top").innerHTML=rows.length?"<table><tr><th>Condition</th><th>Times suggested</th></tr>"+rows.map(r=>`<tr><td>${esc(r[0])}</td><td>${r[1]}</td></tr>`).join("")+"</table>":"<p class='hint'>No suggestions yet. Ask the chatbot about symptoms first.</p>";
+  $("dcount").textContent="Database holds "+S.db.length+" diseases and "+Object.keys(S.sym).length+" recognised symptoms.";
+}
+$("dadd").onclick=()=>{
+  const n=$("dn").value.trim(),s=$("ds").value.split(",").map(x=>x.trim().toLowerCase()).filter(Boolean),d=$("dd").value.trim(),p=$("dp").value.split(",").map(x=>x.trim()).filter(Boolean);
+  if(!n||s.length<2||!d){$("derr").textContent="Enter a name, at least two symptoms and a description.";return}
+  s.forEach(k=>{if(!S.sym[k])S.sym[k]=[k]});
+  const rec={n,s,d,p:p.length?p:["Consult a doctor"],f:"",w:"Consult a doctor for a proper check."};
+  const i=S.db.findIndex(x=>x.n.toLowerCase()===n.toLowerCase());
+  if(i>=0)S.db[i]=rec;else S.db.push(rec);
+  save();$("derr").textContent="";["dn","ds","dd","dp"].forEach(i=>$(i).value="");report();
+};
+</script>
+</body>
+</html>
